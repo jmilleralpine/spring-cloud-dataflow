@@ -42,8 +42,77 @@ wget http://repo.spring.io/{version-type-lowercase}/org/springframework/cloud/sp
 $ java -jar spring-cloud-dataflow-server-local-{project-version}.jar
 ----
 +
-.. Running with Custom Maven Settings and/or Behind a Proxy
-If you want to override specific maven configuration properties (remote repositories, etc.) and/or run the Data Flow Server behind a proxy,
+. Launch the shell:
++
+[source,bash,subs=attributes]
+----
+$ java -jar spring-cloud-dataflow-shell-{project-version}.jar
+----
++
+If the Data Flow Server and shell are not running on the same host, point the shell to the Data Flow server URL:
++
+[source,bash]
+----
+server-unknown:>dataflow config server http://198.51.100.0
+Successfully targeted http://198.51.100.0
+dataflow:>
+----
++
+By default, the application registry will be empty. If you would like to register all out-of-the-box stream applications built with the Kafka binder in bulk, you can with the following command. For more details, review how to <<streams.adoc#spring-cloud-dataflow-register-apps, register applications>>.
++
+[source,bash,subs=attributes]
+----
+$ dataflow:>app import --uri http://bit.ly/Avogadro-GA-stream-applications-kafka-10-maven
+----
++
+NOTE: Depending on your environment, you may need to configure the Data Flow Server to point to a custom
+Maven repository location or configure proxy settings.  See <<getting-started-maven-configuration>> for more information.
++
+. You can now use the shell commands to list available applications (source/processors/sink) and create streams. For example:
++
+[source,bash]
+----
+dataflow:> stream create --name httptest --definition "http --server.port=9000 | log" 
+dataflow:> stream deploy --name httptest --properties "app.http.security.basic.enabled=false" 
+----
++
+NOTE: You will need to wait a little while until the apps are actually deployed successfully
+before posting data.  Look in the log file of the Data Flow server for the location of the log
+files for the `http` and `log` applications.  Tail the log file for each application to verify
+the application has started.  The security is disabled due to a small bug in the http source that
+secures all endpoints, not only Spring Boot Actuator endpoints, by default.
++
+Now post some data
+[source,bash]
+----
+dataflow:> http post --target http://localhost:9000 --data "hello world"
+----
+Look to see if `hello world` ended up in log files for the `log` application.
+
+[NOTE]
+====
+When deploying locally, each app (and each app instance, in case of `count>1`) gets a dynamically assigned `server.port`
+unless you explicitly assign one with `--server.port=x`. In both cases, this setting is propagated as a configuration
+property that will override any lower-level setting that you may have used (_e.g._ in `application.yml` files).
+====
+
+
+[TIP]
+====
+In case you encounter unexpected errors when executing shell commands, you can
+retrieve more detailed error information by setting the exception logging level
+to `WARNING` in `logback.xml`:
+
+[source,xml]
+----
+<logger name="org.springframework.shell.core.JLineShellComponent.exceptions" level="WARNING"/>
+----
+
+====
+
+[[getting-started-maven-configuration]]
+=== Maven Configuration
+If you want to override specific maven configuration properties (remote repositories, proxies, etc.) and/or run the Data Flow Server behind a proxy,
 you need to specify those properties as command line arguments when starting the Data Flow Server. For example:
 +
 [source,bash,subs=attributes]
@@ -73,69 +142,6 @@ $ SPRING_APPLICATION_JSON='{ "maven": { "local-repository": null,
 "remote-repositories": { "repo1": { "url": "https://repo1", "auth": { "username": "repo1user", "password": "repo1pass" } }, "repo2": { "url": "https://repo2" } },
 "proxy": { "host": "proxyhost", "port": 9018, "auth": { "username": "proxyuser", "password": "proxypass" } } } }' java -jar spring-cloud-dataflow-server-local-{project-version}.jar
 ----
-+
-. Launch the shell:
-+
-[source,bash,subs=attributes]
-----
-$ java -jar spring-cloud-dataflow-shell-{project-version}.jar
-----
-+
-If the Data Flow Server and shell are not running on the same host, point the shell to the Data Flow server:
-+
-[source,bash]
-----
-server-unknown:>dataflow config server http://dataflow-server.cfapps.io
-Successfully targeted http://dataflow-server.cfapps.io
-dataflow:>
-----
-+
-By default, the application registry will be empty. If you would like to register all out-of-the-box stream applications built with the Kafka binder in bulk, you can with the following command. For more details, review how to <<streams.adoc#spring-cloud-dataflow-register-apps, register applications>>.
-+
-[source,bash,subs=attributes]
-----
-$ dataflow:>app import --uri http://bit.ly/1-0-4-GA-stream-applications-kafka-maven
-----
-+
-. You can now use the shell commands to list available applications (source/processors/sink) and create streams. For example:
-+
-[source,bash]
-----
-dataflow:> stream create --name httptest --definition "http --server.port=9000 | log" --deploy
-----
-+
-NOTE: You will need to wait a little while until the apps are actually deployed successfully
-before posting data.  Look in the log file of the Data Flow server for the location of the log
-files for the `http` and `log` applications.  Tail the log file for each application to verify
-the application has started.
-+
-Now post some data
-[source,bash]
-----
-dataflow:> http post --target http://localhost:9000 --data "hello world"
-----
-Look to see if `hello world` ended up in log files for the `log` application.
-
-[NOTE]
-====
-When deploying locally, each app (and each app instance, in case of `count>1`) gets a dynamically assigned `server.port`
-unless you explicitly assign one with `--server.port=x`. In both cases, this setting is propagated as a configuration
-property that will override any lower-level setting that you may have used (_e.g._ in `application.yml` files).
-====
-
-
-[TIP]
-====
-In case you encounter unexpected errors when executing shell commands, you can
-retrieve more detailed error information by setting the exception logging level
-to `WARNING` in `logback.xml`:
-
-[source,xml]
-----
-<logger name="org.springframework.shell.core.JLineShellComponent.exceptions" level="WARNING"/>
-----
-
-====
 
 [[getting-started-application-configuration]]
 == Application Configuration

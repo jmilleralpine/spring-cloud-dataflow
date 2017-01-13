@@ -25,22 +25,21 @@ import javax.sql.DataSource;
 import org.h2.tools.Server;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.batch.BatchProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.session.SessionAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.dataflow.completion.CompletionConfiguration;
 import org.springframework.cloud.dataflow.server.config.apps.CommonApplicationProperties;
 import org.springframework.cloud.dataflow.server.config.features.FeaturesConfiguration;
 import org.springframework.cloud.dataflow.server.config.features.FeaturesProperties;
 import org.springframework.cloud.dataflow.server.config.security.BasicAuthSecurityConfiguration;
+import org.springframework.cloud.dataflow.server.config.security.FileAuthenticationConfiguration;
+import org.springframework.cloud.dataflow.server.config.security.LdapAuthenticationConfiguration;
+import org.springframework.cloud.dataflow.server.config.security.OAuthSecurityConfiguration;
 import org.springframework.cloud.dataflow.server.config.web.WebConfiguration;
-import org.springframework.cloud.dataflow.server.repository.StreamDefinitionRepository;
 import org.springframework.cloud.dataflow.server.repository.support.DataflowRdbmsInitializer;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Import;
@@ -67,9 +66,9 @@ import org.springframework.util.StringUtils;
 @EnableHypermediaSupport(type = HAL)
 @EnableSpringDataWebSupport
 @Configuration
-@Import({CompletionConfiguration.class, FeaturesConfiguration.class, WebConfiguration.class})
-@ComponentScan(basePackageClasses = {StreamDefinitionRepository.class, BasicAuthSecurityConfiguration.class})
-@EnableAutoConfiguration(exclude=SessionAutoConfiguration.class)
+@Import({CompletionConfiguration.class, FeaturesConfiguration.class, WebConfiguration.class,
+		BasicAuthSecurityConfiguration.class, FileAuthenticationConfiguration.class,
+		LdapAuthenticationConfiguration.class, OAuthSecurityConfiguration.class})
 @EnableConfigurationProperties({BatchProperties.class, CommonApplicationProperties.class})
 public class DataFlowServerConfiguration {
 

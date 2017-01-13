@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,12 @@
 
 package org.springframework.cloud.dataflow.server.controller;
 
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.batch.admin.service.NoSuchStepExecutionException;
 import org.springframework.batch.core.launch.JobExecutionNotRunningException;
 import org.springframework.batch.core.launch.NoSuchJobException;
@@ -34,10 +38,12 @@ import org.springframework.cloud.dataflow.server.repository.NoSuchTaskExecutionE
 import org.springframework.hateoas.VndErrors;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /**
  * Apply common behavior (exception handling etc.,) to all the REST controllers.
@@ -123,6 +129,55 @@ public class RestControllerAdvice {
 		}
 		String msg = getExceptionMessage(e);
 		return new VndErrors(logref, msg);
+	}
+
+	/**
+	 * Client did not formulate a correct request.
+	 * Log the exception message at warn level and stack trace as trace level.
+	 * Return response status HttpStatus.BAD_REQUEST (400).
+	 */
+	@ExceptionHandler({
+		MissingServletRequestParameterException.class,
+		MethodArgumentTypeMismatchException.class
+	})
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	@ResponseBody
+	public VndErrors onClientGenericBadRequest(Exception e) {
+		String logref = logWarnLevelExceptionMessage(e);
+		if (logger.isTraceEnabled()) {
+			logTraceLevelStrackTrace(e);
+		}
+		String msg = getExceptionMessage(e);
+		return new VndErrors(logref, msg);
+	}
+
+	/**
+	 * The exception handler is trigger if a JSR303 {@link ConstraintViolationException}
+	 * is being raised.
+	 *
+	 * Log the exception message at warn level and stack trace as trace level.
+	 * Return response status HttpStatus.BAD_REQUEST (400).
+	 */
+	@ExceptionHandler({ConstraintViolationException.class})
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	@ResponseBody
+	public VndErrors onConstraintViolationException(ConstraintViolationException e) {
+		String logref = logWarnLevelExceptionMessage(e);
+		if (logger.isTraceEnabled()) {
+			logTraceLevelStrackTrace(e);
+		}
+
+		final StringBuilder errorMessage = new StringBuilder();
+		boolean first = true;
+		for (ConstraintViolation<?> violation : e.getConstraintViolations()) {
+			if (!first) {
+				errorMessage.append("; ");
+			}
+			errorMessage.append(violation.getMessage());
+			first = false;
+		}
+
+		return new VndErrors(logref, errorMessage.toString());
 	}
 
 	private String logWarnLevelExceptionMessage(Exception e) {

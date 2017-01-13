@@ -17,13 +17,17 @@
 package org.springframework.cloud.dataflow.server.local;
 
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.dataflow.server.EnableDataFlowServer;
 
 /**
  * Bootstrap class for the local Spring Cloud Data Flow Server.
  *
  * @author Mark Fisher
+ * @author Ilayaperumal Gopinathan
+ * @author Janne Valkealahti
  */
+@SpringBootApplication
 @EnableDataFlowServer
 public class LocalDataFlowServer {
 

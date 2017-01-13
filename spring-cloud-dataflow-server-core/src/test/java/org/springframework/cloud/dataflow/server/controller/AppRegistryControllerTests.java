@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,10 +90,45 @@ public class AppRegistryControllerTests {
 	}
 
 	@Test
+	public void testRegisterFromPropertyFile() throws Exception {
+		mockMvc.perform(
+				post("/apps").param("uri", "classpath:app-registry.properties").accept(MediaType.APPLICATION_JSON)).andDo(print())
+				.andExpect(status().isCreated());
+	}
+
+	@Test
+	public void testRegisterFromBadPropertyFile() throws Exception {
+		mockMvc.perform(
+				post("/apps").param("uri", "classpath:app-registry-bad.properties").accept(MediaType.APPLICATION_JSON)).andDo(print())
+				.andExpect(status().is5xxServerError());
+	}
+
+	@Test
+	public void testRegisterAll() throws Exception {
+		mockMvc.perform(
+				post("/apps").param("apps", "sink.foo=file:///bar").accept(MediaType.APPLICATION_JSON)).andDo(print())
+				.andExpect(status().isCreated());
+	}
+
+	@Test
+	public void testRegisterAllWithBadApplication() throws Exception {
+		mockMvc.perform(
+				post("/apps").param("apps", "sink-foo=file:///bar").accept(MediaType.APPLICATION_JSON)).andDo(print())
+				.andExpect(status().is5xxServerError());
+	}
+
+	@Test
 	public void testListApplications() throws Exception {
 		mockMvc.perform(
 				get("/apps").accept(MediaType.APPLICATION_JSON)).andDo(print())
 		.andExpect(status().isOk()).andExpect(jsonPath("content", hasSize(4)));
+	}
+
+	@Test
+	public void testFindNonExistentApp() throws Exception {
+		mockMvc.perform(
+				get("/apps/source/foo").accept(MediaType.APPLICATION_JSON)).andDo(print())
+				.andExpect(status().is4xxClientError()).andReturn().getResponse().getContentAsString().contains("NoSuchAppRegistrationException");
 	}
 
 	@Test
